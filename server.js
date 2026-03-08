@@ -13,7 +13,7 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
 app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
 
-const MD_FILE = path.join(__dirname, '..', 'ds_interview_guide.md');
+const MD_FILE = path.join(__dirname, 'ds_interview_guide.md');
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
