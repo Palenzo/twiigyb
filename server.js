@@ -100,17 +100,30 @@ function getSections() {
 
 // ── Routes ─────────────────────────────────────────────────────────────────
 
+// GET /api/health  →  keepalive probe
+app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
+
 // GET /api/sections  →  lightweight list (no content)
 app.get('/api/sections', (_req, res) => {
-  const sections = getSections();
-  res.json(sections.map(({ title, slug, subsections }) => ({ title, slug, subsections })));
+  try {
+    const sections = getSections();
+    res.json(sections.map(({ title, slug, subsections }) => ({ title, slug, subsections })));
+  } catch (err) {
+    console.error('getSections error:', err);
+    res.status(500).json({ error: 'Failed to load sections' });
+  }
 });
 
 // GET /api/sections/:slug  →  full section incl. content
 app.get('/api/sections/:slug', (req, res) => {
-  const section = getSections().find((s) => s.slug === req.params.slug);
-  if (!section) return res.status(404).json({ error: 'Section not found' });
-  res.json(section);
+  try {
+    const section = getSections().find((s) => s.slug === req.params.slug);
+    if (!section) return res.status(404).json({ error: 'Section not found' });
+    res.json(section);
+  } catch (err) {
+    console.error('getSection error:', err);
+    res.status(500).json({ error: 'Failed to load section' });
+  }
 });
 
 // Production static serving
@@ -123,4 +136,13 @@ if (process.env.NODE_ENV === 'production') {
 
 app.listen(PORT, () => {
   console.log(`🚀  Backend listening on http://localhost:${PORT}`);
+
+  // Self-ping every 14 min to prevent Render free tier from sleeping
+  if (process.env.NODE_ENV === 'production' && process.env.RENDER_EXTERNAL_URL) {
+    const PING_URL = `${process.env.RENDER_EXTERNAL_URL}/api/health`;
+    setInterval(() => {
+      fetch(PING_URL).catch((e) => console.warn('Self-ping failed:', e.message));
+    }, 14 * 60 * 1000);
+    console.log(`⏰  Self-ping active → ${PING_URL}`);
+  }
 });
