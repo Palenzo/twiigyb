@@ -28,7 +28,10 @@ function slugify(text) {
 function extractSubsections(content) {
   const subsections = [];
   const lines = content.split('\n');
+  let inFence = false;
   lines.forEach((line) => {
+    if (/^```|^~~~/.test(line)) { inFence = !inFence; return; }
+    if (inFence) return;
     const m = line.match(/^## (.+)$/);
     if (m) {
       const title = m[1].trim();
@@ -43,9 +46,12 @@ function parseMarkdown(content) {
   const sections = [];
   let currentTitle = null;
   let currentLines = [];
+  let inFence = false;
 
   for (const line of lines) {
-    if (/^# [^#]/.test(line)) {
+    if (/^```|^~~~/.test(line)) { inFence = !inFence; }
+
+    if (!inFence && /^# [^#]/.test(line)) {
       // New H1 found
       if (currentTitle !== null) {
         const body = currentLines.join('\n').trim();
